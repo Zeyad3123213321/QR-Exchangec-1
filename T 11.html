@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Exchange - Trade QR Codes</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a6bff;
+            --secondary: #ff6b4a;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --success: #52b788;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark);
+        }
+        
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 80px auto 20px;
+            padding: 0 20px;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: white;
+            color: var(--primary);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .qr-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .qr-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .qr-image-container {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+        
+        .qr-image {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+        
+        .qr-info {
+            padding: 15px;
+        }
+        
+        .qr-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .qr-owner {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .qr-price {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .qr-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .buy-btn {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .details-btn {
+            background-color: #f0f0f0;
+            color: var(--dark);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+        }
+        
+        .profile-info h2 {
+            margin-bottom: 5px;
+        }
+        
+        .profile-info p {
+            color: #666;
+        }
+        
+        .wallet-balance {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .balance-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .qr-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .navbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <div class="logo">QR Exchange</div>
+            <div class="nav-links">
+                <a href="#" class="active" data-tab="marketplace">Marketplace</a>
+                <a href="#" data-tab="my-qr">My QR Codes</a>
+                <a href="#" data-tab="profile">Profile</a>
+            </div>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <div class="hero">
+            <h1>Trade Unique QR Codes</h1>
+            <p>Buy, sell, and exchange valuable QR codes with collectors worldwide</p>
+            <button class="btn" id="createQRBtn">Create New QR Code</button>
+        </div>
+        
+        <div class="tab-content active" id="marketplace">
+            <h2>Available QR Codes</h2>
+            <div class="qr-grid" id="marketplaceGrid">
+                <!-- QR cards will be added here by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="my-qr">
+            <h2>My QR Codes</h2>
+            <div class="qr-grid" id="myQrGrid">
+                <!-- User's QR cards will be added here by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="profile">
+            <div class="user-profile">
+                <img src="young-bearded-man-with-striped-shirt_273609-5677.jpg" alt="Profile" class="profile-pic">
+                <div class="profile-info">
+                    <h2>Zeyad</h2>
+                    <p>QR Collector since 2025</p>
+                </div>
+            </div>
+            
+            <div class="wallet-balance">
+                <h3>Wallet Balance</h3>
+                <p class="balance-amount">$245.50</p>
+                <button class="action-btn" style="margin-top: 10px;">Add Funds</button>
+            </div>
+            
+            <h3>Transaction History</h3>
+            <div id="transactionHistory">
+                <!-- Transactions will be added here by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create QR Modal -->
+    <div class="modal" id="createQRModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Create New QR Code</h2>
+            <form id="qrCreationForm">
+                <div class="form-group">
+                    <label for="qrTitle">Title</label>
+                    <input type="text" id="qrTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="qrContent">Content (URL or Text)</label>
+                    <input type="text" id="qrContent" required>
+                </div>
+                <div class="form-group">
+                    <label for="qrDescription">Description</label>
+                    <textarea id="qrDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="qrPrice">Price ($)</label>
+                    <input type="number" id="qrPrice" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="qrCategory">Category</label>
+                    <select id="qrCategory">
+                        <option value="general">General</option>
+                        <option value="art">Art</option>
+                        <option value="collectible">Collectible</option>
+                        <option value="utility">Utility</option>
+                        <option value="discount">Discount</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Generate QR Code</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- QR Details Modal -->
+    <div class="modal" id="qrDetailsModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="qrDetailsContent">
+                <!-- Content will be added by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sample data
+        const sampleQRs = [
+            {
+                id: '1',
+                title: 'Exclusive Art Gallery Access',
+                content: 'https://artgallery.example.com/vip/12345',
+                description: 'Grants VIP access to exclusive digital art gallery',
+                price: 49.99,
+                owner: 'ArtCollector123',
+                category: 'art',
+                created: '2023-05-15',
+                transactions: 3
+            },
+            {
+                id: '2',
+                title: '50% Off Tech Store',
+                content: 'https://techstore.example.com/discount/50OFF2023',
+                description: 'One-time use 50% discount at TechStore.com',
+                price: 19.99,
+                owner: 'TechDeals',
+                category: 'discount',
+                created: '2023-06-20',
+                transactions: 12
+            },
+            {
+                id: '3',
+                title: 'Rare Digital Collectible',
+                content: 'https://nft.example.com/collectible/rare-123',
+                description: 'Rare digital collectible token with unique artwork',
+                price: 129.99,
+                owner: 'NFTMaster',
+                category: 'collectible',
+                created: '2023-04-10',
+                transactions: 1
+            },
+            {
+                id: '4',
+                title: 'Premium Course Access',
+                content: 'https://courses.example.com/premium/access-code',
+                description: 'Lifetime access to premium coding courses',
+                price: 89.99,
+                owner: 'CodeAcademy',
+                category: 'utility',
+                created: '2023-07-05',
+                transactions: 8
+            }
+        ];
+
+        const myQRs = [
+            {
+                id: '5',
+                title: 'Personal Portfolio',
+                content: 'https://sarahjdesigns.example.com',
+                description: 'Link to my design portfolio website',
+                price: 0,
+                owner: 'Sarah Johnson',
+                category: 'general',
+                created: '2023-08-12',
+                transactions: 0
+            },
+            {
+                id: '6',
+                title: 'Coffee Shop Loyalty',
+                content: 'https://loyalty.example.com/sarahj/coffee',
+                description: 'My personal coffee shop loyalty QR',
+                price: 5.99,
+                owner: 'Sarah Johnson',
+                category: 'utility',
+                created: '2023-08-01',
+                transactions: 0
+            }
+        ];
+
+        const transactions = [
+            {
+                id: 't1',
+                type: 'purchase',
+                amount: 19.99,
+                date: '2023-07-15',
+                item: '50% Off Tech Store',
+                counterparty: 'TechDeals'
+            },
+            {
+                id: 't2',
+                type: 'sale',
+                amount: 49.99,
+                date: '2023-06-28',
+                item: 'Exclusive Art Gallery Access',
+                counterparty: 'ArtLover456'
+            },
+            {
+                id: 't3',
+                type: 'purchase',
+                amount: 89.99,
+                date: '2023-06-10',
+                item: 'Premium Course Access',
+                counterparty: 'CodeAcademy'
+            }
+        ];
+
+        // DOM elements
+        const marketplaceGrid = document.getElementById('marketplaceGrid');
+        const myQrGrid = document.getElementById('myQrGrid');
+        const transactionHistory = document.getElementById('transactionHistory');
+        const createQRModal = document.getElementById('createQRModal');
+        const qrDetailsModal = document.getElementById('qrDetailsModal');
+        const qrCreationForm = document.getElementById('qrCreationForm');
+        const qrDetailsContent = document.getElementById('qrDetailsContent');
+        const createQRBtn = document.getElementById('createQRBtn');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+        const tabs = document.querySelectorAll('[data-tab]');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Initialize the app
+        function init() {
+            renderMarketplace();
+            renderMyQRs();
+            renderTransactions();
+            setupEventListeners();
+        }
+
+        // Render marketplace QR codes
+        function renderMarketplace() {
+            marketplaceGrid.innerHTML = '';
+            sampleQRs.forEach(qr => {
+                const qrCard = createQRCard(qr);
+                marketplaceGrid.appendChild(qrCard);
+            });
+        }
+
+        // Render user's QR codes
+        function renderMyQRs() {
+            myQrGrid.innerHTML = '';
+            myQRs.forEach(qr => {
+                const qrCard = createQRCard(qr, true);
+                myQrGrid.appendChild(qrCard);
+            });
+        }
+
+        // Render transaction history
+        function renderTransactions() {
+            transactionHistory.innerHTML = '';
+            transactions.forEach(tx => {
+                const txElement = document.createElement('div');
+                txElement.className = 'wallet-balance';
+                txElement.style.marginBottom = '10px';
+                
+                const type = tx.type === 'purchase' ? 'Purchased' : 'Sold';
+                const sign = tx.type === 'purchase' ? '-' : '+';
+                const color = tx.type === 'purchase' ? '#ef233c' : '#52b788';
+                
+                txElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <strong>${type}:</strong> ${tx.item}
+                            <p style="color: #666; font-size: 14px;">With ${tx.counterparty} on ${tx.date}</p>
+                        </div>
+                        <div style="color: ${color}; font-weight: bold;">
+                            ${sign}$${tx.amount.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+                
+                transactionHistory.appendChild(txElement);
+            });
+        }
+
+        // Create a QR card element
+        function createQRCard(qr, isOwned = false) {
+            const qrCard = document.createElement('div');
+            qrCard.className = 'qr-card';
+            qrCard.dataset.id = qr.id;
+            
+            // Generate QR code image
+            const qrCode = qrcode(0, 'L');
+            qrCode.addData(qr.content);
+            qrCode.make();
+            const qrImg = qrCode.createImgTag(4);
+            
+            qrCard.innerHTML = `
+                <div class="qr-image-container">
+                    ${qrImg}
+                </div>
+                <div class="qr-info">
+                    <h3 class="qr-title">${qr.title}</h3>
+                    <p class="qr-owner">${isOwned ? 'Owned by you' : 'Sold by ' + qr.owner}</p>
+                    ${qr.price > 0 ? `<p class="qr-price">$${qr.price.toFixed(2)}</p>` : '<p class="qr-price">Not for sale</p>'}
+                    <div class="qr-actions">
+                        <button class="action-btn details-btn" data-id="${qr.id}">Details</button>
+                        ${!isOwned && qr.price > 0 ? `<button class="action-btn buy-btn" data-id="${qr.id}">Buy</button>` : ''}
+                        ${isOwned ? `<button class="action-btn buy-btn" data-id="${qr.id}">Sell</button>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Replace the img tag with proper styling
+            const imgTag = qrCard.querySelector('img');
+            if (imgTag) {
+                imgTag.className = 'qr-image';
+                imgTag.style.width = '150px';
+                imgTag.style.height = '150px';
+            }
+            
+            return qrCard;
+        }
+
+        // Show QR details
+        function showQRDetails(id) {
+            const qr = [...sampleQRs, ...myQRs].find(item => item.id === id);
+            if (!qr) return;
+            
+            // Generate QR code image for details
+            const qrCode = qrcode(0, 'L');
+            qrCode.addData(qr.content);
+            qrCode.make();
+            const qrImg = qrCode.createImgTag(6);
+            
+            qrDetailsContent.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    ${qrImg}
+                </div>
+                <h2>${qr.title}</h2>
+                <p style="color: #666; margin-bottom: 15px;">${qr.owner === 'Sarah Johnson' ? 'Owned by you' : 'Sold by ' + qr.owner}</p>
+                
+                ${qr.price > 0 ? `<p style="font-size: 24px; font-weight: bold; color: var(--primary); margin-bottom: 15px;">$${qr.price.toFixed(2)}</p>` : ''}
+                
+                <h3 style="margin-bottom: 10px;">Description</h3>
+                <p style="margin-bottom: 20px;">${qr.description}</p>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <div>
+                        <strong>Category:</strong> ${qr.category.charAt(0).toUpperCase() + qr.category.slice(1)}
+                    </div>
+                    <div>
+                        <strong>Created:</strong> ${qr.created}
+                    </div>
+                </div>
+                
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px;">QR Content</h3>
+                    <p style="word-break: break-all;">${qr.content}</p>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    ${qr.price > 0 ? `<button class="action-btn buy-btn" style="flex: 1;" data-id="${qr.id}">${qr.owner === 'Sarah Johnson' ? 'List for Sale' : 'Buy Now'}</button>` : ''}
+                    <button class="action-btn details-btn" style="flex: 1;" onclick="downloadQR('${qr.id}', '${qr.title}')">Download QR</button>
+                </div>
+            `;
+            
+            // Style the QR image in details
+            const imgTag = qrDetailsContent.querySelector('img');
+            if (imgTag) {
+                imgTag.style.width = '200px';
+                imgTag.style.height = '200px';
+                imgTag.style.margin = '0 auto';
+                imgTag.style.display = 'block';
+            }
+            
+            openModal(qrDetailsModal);
+        }
+
+        // Download QR code
+        function downloadQR(id, title) {
+            const qr = [...sampleQRs, ...myQRs].find(item => item.id === id);
+            if (!qr) return;
+            
+            const qrCode = qrcode(0, 'L');
+            qrCode.addData(qr.content);
+            qrCode.make();
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const size = 400;
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Create QR code on canvas
+            const modules = qrCode.modules;
+            const tileSize = size / modules.length;
+            
+            for (let row = 0; row < modules.length; row++) {
+                for (let col = 0; col < modules[row].length; col++) {
+                    ctx.fillStyle = modules[row][col] ? '#000000' : '#ffffff';
+                    ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+                }
+            }
+            
+            // Add title text
+            ctx.fillStyle = '#000000';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, size/2, size - 20);
+            
+            // Convert to image and download
+            const link = document.createElement('a');
+            link.download = `QR-${title.replace(/\s+/g, '-')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    const tabId = tab.dataset.tab;
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === tabId) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Create QR button
+            createQRBtn.addEventListener('click', () => openModal(createQRModal));
+            
+            // Close modal buttons
+            closeModalButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closeModal(btn.closest('.modal'));
+                });
+            });
+            
+            // Click outside modal to close
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    closeModal(e.target);
+                }
+            });
+            
+            // QR creation form
+            qrCreationForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const title = document.getElementById('qrTitle').value;
+                const content = document.getElementById('qrContent').value;
+                const description = document.getElementById('qrDescription').value;
+                const price = parseFloat(document.getElementById('qrPrice').value) || 0;
+                const category = document.getElementById('qrCategory').value;
+                
+                // Create new QR code
+                const newQR = {
+                    id: 'qr' + Date.now(),
+                    title,
+                    content,
+                    description,
+                    price,
+                    owner: 'Sarah Johnson',
+                    category,
+                    created: new Date().toISOString().split('T')[0],
+                    transactions: 0
+                };
+                
+                myQRs.push(newQR);
+                renderMyQRs();
+                closeModal(createQRModal);
+                qrCreationForm.reset();
+                
+                // Switch to "My QR Codes" tab
+                document.querySelector('[data-tab="my-qr"]').click();
+            });
+            
+            // Delegate events for dynamic elements
+            document.addEventListener('click', (e) => {
+                // Details button
+                if (e.target.classList.contains('details-btn')) {
+                    const id = e.target.dataset.id;
+                    showQRDetails(id);
+                }
+                
+                // Buy button
+                if (e.target.classList.contains('buy-btn')) {
+                    const id = e.target.dataset.id;
+                    const qr = [...sampleQRs, ...myQRs].find(item => item.id === id);
+                    if (qr) {
+                        if (qr.owner === 'Sarah Johnson') {
+                            // List for sale
+                            alert(`QR code "${qr.title}" listed for sale at $${qr.price.toFixed(2)}`);
+                        } else {
+                            // Buy QR code
+                            if (confirm(`Buy "${qr.title}" for $${qr.price.toFixed(2)}?`)) {
+                                alert('Purchase successful! The QR code has been added to your collection.');
+                                
+                                // In a real app, you would update the backend here
+                                const purchasedQR = {...qr, owner: 'Sarah Johnson'};
+                                myQRs.push(purchasedQR);
+                                sampleQRs.splice(sampleQRs.indexOf(qr), 1);
+                                
+                                // Add transaction
+                                transactions.unshift({
+                                    id: 't' + Date.now(),
+                                    type: 'purchase',
+                                    amount: qr.price,
+                                    date: new Date().toISOString().split('T')[0],
+                                    item: qr.title,
+                                    counterparty: qr.owner
+                                });
+                                
+                                renderMarketplace();
+                                renderMyQRs();
+                                renderTransactions();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Open modal
+        function openModal(modal) {
+            modal.style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal(modal) {
+            modal.style.display = 'none';
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
